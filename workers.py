@@ -4,7 +4,7 @@ from threading import Thread, current_thread
 import requests
 import pandas as pd
 
-from volume_type_validation import AwsVolumeTypeValidation
+from idle_cost_savings import AwsIdleCostSavings
 
 logger = logging.getLogger()
 MAX_RETRIES = 3
@@ -47,12 +47,13 @@ def _retryable(method: str, *args, **kwargs) -> requests.Response:
 #         b64_identity: str = None
 # )
 
-def volume_type_validation_worker(
+def idle_cost_savings_worker(
         job: dict,
         next_service: str,
+        ai_service: str,
         b64_identity: str = None
 ) -> Thread:
-    """Validate Volume Types."""
+    """Get Idle Cost Savings."""
 
     def worker() -> None:
         thread = current_thread()
@@ -64,6 +65,7 @@ def volume_type_validation_worker(
             logger.error("%s: Invalid Job data, terminated.", thread.name)
             return
 
+        # batch_id = '333'
         logger.info('%s: Job ID %s: Started...', thread.name, batch_id)
 
         # AI Processing of input data in `job` goes here
@@ -72,9 +74,11 @@ def volume_type_validation_worker(
         entities = [
             "container_nodes",
             "container_nodes_tags",
-            "volume_attachments",
-            "volumes",
-            "volume_types",
+            "containers",
+            "container_groups",
+            "container_projects",
+            "container_resource_quotas",
+            "flavors",
             "vms",
             "sources"
         ]
@@ -85,23 +89,27 @@ def volume_type_validation_worker(
             json_data = batch_data.get(entity)
             all_dataframes[entity] = pd.DataFrame(json_data)
 
+            # all_dataframes[entity] = pd.read_csv(f'/Users/akarve/rh/aiops/aiops-dummy-ai-service/idle_cost_savings_csvs/{entity}.csv').applymap(str)
+            # all_dataframes[entity] = pd.read_csv(
+            #     f'/Users/akarve/rh/aiops/aiops-dummy-ai-service/idle_cost_savings_csvs/{entity}.csv')
+
         logger.info(
-            '%s: Job ID %s: Validating Volume Types in Clusters...',
+            '%s: Job ID %s: Analyzing Idle Cost Savings...',
             thread.name, batch_id
         )
 
-        topology_data = AwsVolumeTypeValidation(all_dataframes)
-        result = topology_data.validate()
+        topology_data = AwsIdleCostSavings(all_dataframes)
+        result = topology_data.savings()
 
         # Build response JSON
         output = {
             'id': batch_id,
-            'ai_service': 'ai_volumetype_validation',
+            'ai_service': ai_service,
             'data': result.to_dict()
         }
 
         logger.info(
-            '%s: Job ID %s: Validation done, publishing...',
+            '%s: Job ID %s: Idle Cost Savings analysis done, publishing...',
             thread.name, batch_id
         )
 
