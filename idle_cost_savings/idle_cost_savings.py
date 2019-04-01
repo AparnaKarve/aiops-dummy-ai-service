@@ -303,8 +303,8 @@ class AwsIdleCostSavings:   #noqa  #Too few public methods
             container_memory_limit = container.memory_limit
         return container_memory_limit
 
-    def _get_host_inventory_uuid(self, x_host_inventory_uuid):
-        vm = self.vms[self.vms['id'] == x_host_inventory_uuid]
+    def _get_host_inventory_uuid(self, x_id):
+        vm = self.vms[self.vms['id'] == x_id]
 
         host_inventory_uuid = ""
         if np.any(vm):
@@ -353,16 +353,16 @@ class AwsIdleCostSavings:   #noqa  #Too few public methods
         compute_container_nodes = nodes[nodes["role"].str.contains("compute")]
         return compute_container_nodes
 
-    def _get_instance_type(self, x_instance_type):
+    def _get_instance_type(self, x_container_node_id):
         instance_type = self.instance_types[
-            self.instance_types["container_node_id"] == x_instance_type]
+            self.instance_types["container_node_id"] == x_container_node_id]
 
         instance_type_value = ""
         if np.any(instance_type) and instance_type['value'].item():
             instance_type_value = instance_type['value'].item()
         else:
             vm_id = self.container_nodes[
-                self.container_nodes['id'] == x_instance_type
+                self.container_nodes['id'] == x_container_node_id
             ]
 
             if np.any(vm_id) or np.any(self.vms):
@@ -375,18 +375,18 @@ class AwsIdleCostSavings:   #noqa  #Too few public methods
 
         return instance_type_value
 
-    def _get_type(self, x_type):
+    def _get_type(self, x_container_node_id):
         special_type = self.type_roles[
-            self.type_roles["container_node_id"] == x_type]
+            self.type_roles["container_node_id"] == x_container_node_id]
         if np.any(special_type):
             return special_type['value'].item()
 
         compute_role = self.compute_roles[
-            self.compute_roles["container_node_id"] == x_type]
+            self.compute_roles["container_node_id"] == x_container_node_id]
         master_role = self.master_roles[
-            self.master_roles["container_node_id"] == x_type]
+            self.master_roles["container_node_id"] == x_container_node_id]
         infra_role = self.infra_roles[
-            self.infra_roles["container_node_id"] == x_type]
+            self.infra_roles["container_node_id"] == x_container_node_id]
 
         roles = []
         if np.any(compute_role):
@@ -398,13 +398,13 @@ class AwsIdleCostSavings:   #noqa  #Too few public methods
 
         return ",".join(roles)
 
-    def _get_flavor_cpu(self, x_flavor_cpu):
+    def _get_flavor_cpu(self, x_flavor_name):
         if not np.any(self.flavors):
             return None
 
         cpu_count = self.flavors[
             self.flavors['cpus'].notnull() &
-            (self.flavors['name'] == x_flavor_cpu)
+            (self.flavors['name'] == x_flavor_name)
         ]
 
         flavor_cpu = None
@@ -412,13 +412,13 @@ class AwsIdleCostSavings:   #noqa  #Too few public methods
             flavor_cpu = cpu_count.iloc[0]['cpus'].item()
         return flavor_cpu
 
-    def _get_flavor_memory(self, x_flavor_memory):
+    def _get_flavor_memory(self, x_flavor_name):
         if not np.any(self.flavors):
             return None
 
         memory = self.flavors[
             self.flavors['memory'].notnull() &
-            (self.flavors['name'] == x_flavor_memory)
+            (self.flavors['name'] == x_flavor_name)
         ]
 
         flavor_memory = None
