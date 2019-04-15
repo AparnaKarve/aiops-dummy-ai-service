@@ -751,6 +751,7 @@ class AwsIdleCostSavings:   #noqa  #Too few public methods
         message = {
             "message": "We can use bigger instance types, which can lead to "
                        "cost reduction.",
+            "cluster_name": self.sources[(self.sources['id'] == source_id)].name.values[0],
             "availability_zone": zone,
             "instance_type": instance_type,
             "recommended_nodes_for_shut_down": {
