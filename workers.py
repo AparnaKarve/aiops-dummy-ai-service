@@ -96,7 +96,7 @@ def ai_service_worker(
             rows,
         )
 
-        data_frame = rad.inventory_data_to_pandas(batch_data, "bios_vendor", "infrastructure_vendor")
+        data_frame = rad.inventory_data_to_pandas(batch_data, "infrastructure_vendor")
         data_frame, _mapping = rad.preprocess(data_frame)
         isolation_forest = rad.IsolationForest(
             data_frame,
